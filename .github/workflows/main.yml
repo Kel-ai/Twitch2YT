@@ -10,7 +10,7 @@ on:
       maxTime:
         description: 'maxLength'
         required: true
-        default: "3600"
+        default: "21600"
       bitrate:
         description: 'Desired bitrate (e.g., 6000k for 6000 kb/s)'
         required: false
