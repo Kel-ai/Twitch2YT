@@ -60,7 +60,7 @@ jobs:
         FPS="30"
         QUAL="medium"
         YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2/"
-        KEY="h40p-p7kj-w4te-pd1h-1f7w"
+        KEY="${{ secrets.STREAM_KEY }}"
         RESOLUTION="${{ github.event.inputs.resolution }}"
         
         ffmpeg -re -i "$M3U8_URL" \
