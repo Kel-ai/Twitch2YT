@@ -10,7 +10,7 @@ on:
       maxTime:
         description: 'maxLength'
         required: true
-        default: "6"
+        default: "3600"
       bitrate:
         description: 'Desired bitrate (e.g., 6000k for 6000 kb/s)'
         required: false
@@ -62,7 +62,7 @@ jobs:
         YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2/"
         KEY="${{ secrets.STREAM_KEY }}"
         RESOLUTION="${{ github.event.inputs.resolution }}"
-        MAX_TIME=${{ github.event.inputs.maxTime }} * 3600
+        MAX_TIME=${{ github.event.inputs.maxTime }}
         
         ffmpeg -re -i "$M3U8_URL" \
                -vcodec libx264 -pix_fmt yuv420p -preset $QUAL -r $FPS -g $(($FPS * 2)) -b:v $VBR \
