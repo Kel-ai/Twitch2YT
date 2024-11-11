@@ -1,27 +1,25 @@
-name: Download Twitch Stream
+name: Download and Restream MP4 File
 
 on:
   workflow_dispatch:
     inputs:
-      stream_url:
-        description: 'Twitch Stream URL'
+      file_url:
+        description: 'URL of the MP4 file'
         required: true
-        default: 'https://www.twitch.tv/smallant'
+        default: 'https://file-examples.com/storage/fe91352fe66730de9982024/2017/04/file_example_MP4_480_1_5MG.mp4'
       timeout:
-        description: 'timeout'
+        description: 'Timeout duration (not used in this workflow)'
         required: true
         default: '3h'
       bitrate:
         description: 'Desired bitrate (e.g., 800k for 800 kb/s)'
         required: false
         default: '800k'
-
       resolution:
         description: 'Desired resolution (e.g., 1280x720)'
         required: false
         default: 'res:1280'
 
-        
 jobs:
   download:
     runs-on: ubuntu-latest
@@ -29,42 +27,24 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-
-    - name: Install yt-dlp
-      run: python -m pip install --upgrade yt-dlp
-
     - name: Install FFmpeg
       run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      
-    - name: Extract Stream Title
-      id: extract-title
-      run: echo "STREAM_TITLE=$(yt-dlp --get-title ${{ github.event.inputs.stream_url }})" >> $GITHUB_ENV
 
-    - name: Sanitize Stream Title
+    - name: Download MP4 file
       run: |
-        echo "SANITIZED_TITLE=$(echo $STREAM_TITLE | sed 's/[":<>|*?\\/\r\n]//g')" >> $GITHUB_ENV
-        
-    - name: Extract m3u8 URL
-      id: extract-m3u8
-      run: |
-        echo "M3U8_URL=$(yt-dlp --no-download --format 'best[protocol=m3u8]/best' -g ${{ github.event.inputs.stream_url }})" >> $GITHUB_ENV
-        echo "M3U8_URL=$M3U8_URL" >> $GITHUB_OUTPUT  # For debugging
+        curl -L -o input.mp4 "${{ github.event.inputs.file_url }}"
 
     - name: Restream with FFmpeg
       run: |
         VBR="${{ github.event.inputs.bitrate }}"
         FPS="30"
         QUAL="medium"
-        YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2/h40p-p7kj-w4te-pd1h-1f7w"
+        YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2"
         KEY="${{ secrets.STREAM_KEY }}"
         RESOLUTION="${{ github.event.inputs.resolution }}"
-        
-        ffmpeg -re -i "$M3U8_URL" \
-               -vcodec libx264 -pix_fmt yuv420p -preset $QUAL -r $FPS -g $(($FPS * 2)) -b:v $VBR \
-               -acodec libmp3lame -ar 44100 -threads 6 -qscale 3 -b:a 712000 -bufsize 512k \
+
+        ffmpeg -re -i input.mp4 \
+               -vcodec libx264 -pix_fmt yuv420p -preset $QUAL -r $FPS -g $((FPS * 2)) -b:v $VBR \
+               -acodec aac -ar 44100 -threads 6 -b:a 128k -bufsize 512k \
                ${RESOLUTION:+ -vf "scale=${RESOLUTION##*:}:-1"} \
                -f flv "$YOUTUBE_URL/$KEY"
