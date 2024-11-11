@@ -6,20 +6,20 @@ on:
       stream_url:
         description: 'Twitch Stream URL'
         required: true
-        default: 'https://www.twitch.tv/smallant'
-      timeout:
-        description: 'timeout'
+        default: 'https://www.twitch.tv/piratesoftware'
+      maxTime:
+        description: 'maxLength'
         required: true
-        default: '3h'
+        default: '6h'
       bitrate:
-        description: 'Desired bitrate (e.g., 800k for 800 kb/s)'
+        description: 'Desired bitrate (e.g., 6000k for 6000 kb/s)'
         required: false
-        default: '800k'
+        default: '6000k'
 
       resolution:
-        description: 'Desired resolution (e.g., 1280x720)'
+        description: 'Desired resolution (e.g., 1920x1080)'
         required: false
-        default: 'res:1280'
+        default: 'res:1920'
 
         
 jobs:
@@ -62,9 +62,10 @@ jobs:
         YOUTUBE_URL="rtmp://a.rtmp.youtube.com/live2/"
         KEY="${{ secrets.STREAM_KEY }}"
         RESOLUTION="${{ github.event.inputs.resolution }}"
+        MAX_TIME="${{ github.event.inputs.maxTime }}"
         
         ffmpeg -re -i "$M3U8_URL" \
                -vcodec libx264 -pix_fmt yuv420p -preset $QUAL -r $FPS -g $(($FPS * 2)) -b:v $VBR \
                -acodec libmp3lame -ar 44100 -threads 6 -qscale 3 -b:a 712000 -bufsize 512k \
                ${RESOLUTION:+ -vf "scale=${RESOLUTION##*:}:-1"} \
-               -f flv "$YOUTUBE_URL/$KEY"
+               -t "$MAX_TIME" -f flv "$YOUTUBE_URL/$KEY"
